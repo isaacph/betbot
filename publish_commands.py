@@ -9,7 +9,7 @@ from public_key import AUTH_TOKEN, APPLICATION_ID
 
 url = f"https://discord.com/api/v10/applications/{APPLICATION_ID}/commands"
 
-to_delete = ['bet']
+to_delete = []
 
 # This is an example CHAT_INPUT or Slash Command, with a type of 1
 json = {
@@ -90,12 +90,6 @@ json = {
             "required": False,
             "options": [
                 {
-                    "name": "draw",
-                    "description": "This bet has no winner",
-                    "type": 1,
-                    "required": False,
-                },
-                {
                     "name": "victor",
                     "description": "The user who should win the bet",
                     "type": 6,
@@ -109,6 +103,20 @@ json = {
                 },
             ]
         },
+        {
+            "name": "cancel",
+            "description": "Cancel a bet with another user. Requires consent from other user",
+            "type": 1,
+            "required": False,
+            "options": [
+                {
+                    "name": "against",
+                    "description": "The user you want to cancel your bet with",
+                    "type": 6,
+                    "required": True,
+                }
+            ]
+        }
     ]
 }
 
