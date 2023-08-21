@@ -1,10 +1,11 @@
 from __future__ import annotations
 import datetime
+import pytz
 from typing import cast
 from contextlib import contextmanager
 from io import SEEK_SET, TextIOWrapper
 from typing import Dict
-from public_key import PUBLIC_KEY, BANK_DIR, VERSION, VERSION_MAX_LENGTH
+from public_key import PUBLIC_KEY, BANK_DIR, VERSION, VERSION_MAX_LENGTH, TIMEZONE
 from dataclasses import dataclass
 from dataclass_wizard import JSONWizard
 import json
@@ -80,13 +81,13 @@ def lambda_handler(event, _):
                     option = options[0].get('name')
                     if option == "bank":
                         paycheck_message = ""
-                        time_diff = datetime.datetime.now() - user.last_paycheck
-                        if time_diff >= PAYCHECK_FREQUENCY:
+                        time_diff = user.last_paycheck - get_prev_midnight()
+                        if time_diff < datetime.timedelta(0):
                             user.balance += PAYCHECK
                             user.last_paycheck = datetime.datetime.now()
                             paycheck_message = f"Added daily paycheck: +${PAYCHECK}"
                         else:
-                            paycheck_message = f"{humanize.naturaldelta(PAYCHECK_FREQUENCY - time_diff)} until next paycheck"
+                            paycheck_message = f"{humanize.precisedelta(get_next_midnight() - datetime.datetime.now(), format='%0.f')} until next paycheck"
 
                         resp = {
                             "type": RESPONSE_TYPES['MESSAGE_WITH_SOURCE'],
@@ -556,3 +557,15 @@ def fix_bank_json(version: str, s: str):
 #         print(bank)
 # 
 # test()
+
+def get_next_midnight():
+    today = datetime.datetime.now(pytz.timezone("America/New_York")) \
+                .replace(hour=0,minute=0,second=0,microsecond=0)
+    date = today.date() + datetime.timedelta(days=1)
+    dt = datetime.datetime.combine(date=date, time=today.time(), tzinfo=today.tzinfo)
+    return dt.astimezone(pytz.utc).replace(tzinfo=None)
+def get_prev_midnight():
+    return datetime.datetime.now(pytz.timezone("America/New_York")) \
+            .replace(hour=0,minute=0,second=0,microsecond=0) \
+            .astimezone(pytz.utc) \
+            .replace(tzinfo=None)
